@@ -1,0 +1,30 @@
+NotYet works with two stacks, the main data stack and the call stack.
+The call stack contains pointers to functions that are the "callers" of the current functions.
+On x86 the call stack grows upward in memory, and uses ebp to denote the top of the stack.
+The data stack is the most inportant part of the language, all functions use it to pass parameters and return values.
+The data stack uses esp as stack-pointer and grows down, it might be given an extra register to store the TOS (top-of-stack)
+
+NotYet has two fundamentally different types of functions:
+==> assembler functions, "afunc" for short.
+==> native functions, "bfunc" for short, this might be changed into just "func".
+
+Native functions consist of a series of pointers to afuncs and their (word-sized) fixed parameters.
+Each afunc uses a fixed number (may be zero) of fixed parameters, as well, each afunc may use a non-fixed number of non-fixed parameters from the 
+data stack.
+Each function starts with a word of info such as whether it is an afunc or a func.
+Each bfunc ends with a function pointer to the "return" function.
+Each afunc is responisble for jumping to the next afunc in the current bfunc.
+
+Examples:
+==>To push a number you first have the pointer to afunc push, than the value to be pushed, PUSH (or LIT, like Forth) puts the next word in the 
+bfunc on the stack and than transfers execution to the pointer in the word after that.
+==>Branches ?( and ?) are translated into a "branch"-function pointer and a word afer that that signals how many words back/forward there is to be 
+gone.
+==>Calls to a bfunc: first a pointer to the "bcall" afunc, than a pointer to a bfunc.
+
+Objects: there is a register that points to the object, each access to a member variable is through this pointer and an offset.
+
+Threads: each thread has its own TCB (thread control block) that contains register information and some pointers.
+It also contains its's status and priority.
+Each thread has it's own set of stacks.
+There is a function "YIELD" that does store the state of the thread and transfers control to the thread manager.
