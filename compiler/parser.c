@@ -7,16 +7,19 @@ extern char * yytext;
 extern FILE * yyin;
 
 /********* memory macros ***********/ 
-unsigned int * begin_b, end_b, block, b;
+unsigned int * begin_b;
+unsigned int * end_b;
+unsigned int * block;
+unsigned int * b;
 
 #define ALLOC(N) do { \
 	b = block; \
 	if ((block+=((N)<<2)) > end_b) \
-		if (! realloc(begin_b, (end_b+=0x1000)-begin_b)) { \
+		if (! realloc(begin_b,(unsigned int)((end_b+=0x400)-begin_b))) { \
 			puts("memory allocation failiure"); \
 			exit(-1); \
 		} \
-	while (0);
+	} while (0);
 
 /********* error function **********/
 void cerror(char * str)
@@ -77,7 +80,7 @@ struct /* block */
 			float f;
 		} d;
 	} d[0x100];
-} b[8];
+} tb[8];
 
 int bnum;
 
@@ -103,6 +106,8 @@ int find_func(char *str)
 
 int parser(void)
 {
+	int i;
+
 	fnum = vnum = 1;
 	bnum = 0;
 
@@ -269,7 +274,91 @@ int parser(void)
 				}
 				else if (ctok == '[')
 				{
-					/* handle the array case */
+					if ((ctok = yylex()) == ']')
+						cerror("array defined without size");
+					else if (ctok == TOK_INT)
+					{
+						if (yylex() != ']')
+							cerror("invalid array size");
+					}
+					else
+						cerror("invalid array size");
+					if (yylex() != TOK_NAME)
+						cerror("invalid variable name");
+					/* csize now holds the bit-size of the elems,
+					*   cint now holds the array length,
+					* yytext now points to the array name */
+					if (curv = find_var(yytext))
+					{
+						if (var[curv].u != 1) cerror("internal compiler error");
+						if (var[curv].s != csize) cerror("invalid type for variable");
+						if (var[curv].d == 1) cerror("variable is defined twice");
+						if (var[curv].p == 0) cerror("array is already declared as a scalar");
+						var[curv].d = 1;
+						var[cint].num = cint;
+						if ((ctok = yylex()) == '{')
+						{
+							var[curv].i = 1;
+							ALLOC(cint + 3);
+							var[curv].data.p = b;
+							*b = 7;
+							*(b+1) = cint +3;
+							*(b+2) = ((unsigned int) b) + 3;
+							for (i=3;i<(cint+3);i++)
+							{
+								if ((ctok = yylex()) == TOK_INT)
+									*(b+i) = cint;
+								else if (ctok == '}')
+									break;
+								else
+									cerror("invalid array initialisation");
+								if (yylex() != ',')
+									cerror("invalid array initialisation");
+							}
+							if (yylex() != ';')
+								cerror("missing semicolon");
+						}
+						else if (ctok == ';')
+							var[curv].i = 0;
+						else
+							cerror("missing semicolon");
+					}
+					else
+					{
+						var[vnum].u = 1;
+						var[vnum].s = csize;
+						var[vnum].d = 1;
+						var[vnum].p = 1;
+						var[vnum].num = cint;
+						strncpy(var[vnum].name, yytext, NAME_LEN);
+						if ((ctok = yylex()) == '{')
+						{
+							var[vnum].i = 1;
+							ALLOC(cint + 3);
+							var[vnum].data.p = b;
+							*b = 7;
+							*(b+1) = cint +3;
+							*(b+2) = ((unsigned int) b) + 3;
+							for (i=3;i<(cint+3);i++)
+							{
+								if ((ctok = yylex()) == TOK_INT)
+									*(b+i) = cint;
+								else if (ctok == '}')
+									break;
+								else
+									cerror("invalid array initialisation");
+								if (yylex() != ',')
+									cerror("invalid array initialisation");
+							}
+							if (yylex() != ';')
+								cerror("missing semicolon");
+						}
+						else if (ctok == ';')
+							var[vnum].i = 0;
+						else
+							cerror("missing semicolon");
+						vnum++;
+					}
 				}
 				else
 					cerror("variable definition followed by invalid name");
@@ -327,6 +416,14 @@ int main(int argc, char *argv[])
 	
 	strcpy(filename, argv[1]);
 	line = 1;
+
+	if (! (begin_b = malloc(0x1000)))
+	{
+		puts("memory allocation failure");
+		return(-1);
+	}
+	block = begin_b;
+	end_b = begin_b + 0x400;
 
 	return(parser());
 }
