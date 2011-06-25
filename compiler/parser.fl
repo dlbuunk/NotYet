@@ -1,6 +1,7 @@
 %{
 
-typedef enum {
+typedef enum
+{
 	byte = 8,
 	word = 16,
 	dword = 32,
@@ -22,32 +23,37 @@ typedef enum {
 #define TOK_STR  312
 #define TOK_INT  313
 
+int ctok;
 int cint;
 size csize;
+
+char filename[80];
+int line;
 
 %}
 
 %x comment_c
 %x comment_cc
-%x comment_h
+%x h_mode
+%x h_mode_end
 
 %%
 
-decl	return TOK_DECL;
-def	return TOK_DEF;
-afunc	return TOK_AFUN;
-bfunc	return TOK_BFUN;
-byte	csize = byte; return TOK_SIZE;
-word	csize = word; return TOK_SIZE;
-dword	csize = dword; return TOK_SIZE;
-qword	csize = qword; return TOK_SIZE;
+decl			return TOK_DECL;
+def			return TOK_DEF;
+afunc			return TOK_AFUN;
+bfunc			return TOK_BFUN;
+byte			csize = byte; return TOK_SIZE;
+word			csize = word; return TOK_SIZE;
+dword			csize = dword; return TOK_SIZE;
+qword			csize = qword; return TOK_SIZE;
 
-"?!("	return TOK_PN_O;
-"?!)"	return TOK_PN_C;
-"?("	return TOK_PQ_O;
-"?)"	return TOK_PQ_C;
-"("	return TOK_P_O;
-")"	return TOK_P_C;
+"?!("			return TOK_PN_O;
+"?!)"			return TOK_PN_C;
+"?("			return TOK_PQ_O;
+"?)"			return TOK_PQ_C;
+"("			return TOK_P_O;
+")"			return TOK_P_C;
 
 \"(\\.|[^"])*\"		return TOK_STR;
 -?[1-9][0-9]*		sscanf(yytext, "%d", &cint); return TOK_INT;
@@ -56,28 +62,34 @@ qword	csize = qword; return TOK_SIZE;
 0x[0-9A-Fa-f]+		sscanf(yytext, "%x", &cint); return TOK_INT;
 [A-Za-z][A-Za-z_0-9]*	return TOK_NAME;
 
-"{"	return '{';
-"}"	return '}';
-"["	return '[';
-"]"	return ']';
-";"	return ';';
-","	return ',';
+"{"			return '{';
+"}"			return '}';
+"["			return '[';
+"]"			return ']';
+";"			return ';';
+","			return ',';
 
-"/*"	BEGIN(comment_c);
-"//"	BEGIN(comment_cc);
-"#"	BEGIN(comment_h);
+"/*"			BEGIN(comment_c);
+"//"			BEGIN(comment_cc);
+"#"			BEGIN(h_mode);
 
-[ \t\r\n]*	;
+[ \t\r]*		;
+\n			line++;
 
-<comment_c>.	;
-<comment_c>\n	;
-<comment_c>"*/"	; BEGIN(INITIAL);
+<comment_c>.		;
+<comment_c>\n		line++;
+<comment_c>"*/"		; BEGIN(INITIAL);
 
-<comment_cc>.	;
-<comment_cc>\n	BEGIN(INITIAL);
+<comment_cc>.		;
+<comment_cc>\n		line++; BEGIN(INITIAL);
 
-<comment_h>.	;
-<comment_h>\n	BEGIN(INITIAL);
+<h_mode>[0-9]*		sscanf(yytext, "%d", &line);
+<h_mode>[A-Za-z_\.]*	strcpy(filename, yytext); BEGIN(h_mode_end);
+<h_mode>.		;
+<h_mode>\n		;
+
+<h_mode_end>.		;
+<h_mode_end>\n		BEGIN(INITIAL);
 
 %%
 
@@ -86,8 +98,60 @@ int yywrap()
 	return(1);
 }
 
-int main()
+int parser(void)
 {
-	while(yylex());
-	return(0);
+	for (;;)
+	{
+		ctok = yylex();
+		printf("%s:%d\t\t", filename, line);
+		switch (ctok)
+		{
+			case 0 : return(0);
+
+			case '[' : printf("[\n"); break;
+			case ']' : printf("]\n"); break;
+			case '{' : printf("{\n"); break;
+			case '}' : printf("}\n"); break;
+			case ';' : printf(";\n"); break;
+			case ',' : printf(",\n"); break;
+
+			case TOK_P_O  : printf("(\n"); break;
+			case TOK_P_C  : printf(")\n"); break;
+			case TOK_PQ_O : printf("?(\n"); break;
+			case TOK_PQ_C : printf("?)\n"); break;
+			case TOK_PN_O : printf("?!(\n"); break;
+			case TOK_PN_C : printf("?!)\n"); break;
+
+			case TOK_DECL : printf("decl\n"); break;
+			case TOK_DEF  : printf("def\n"); break;
+			case TOK_AFUN : printf("afunc\n"); break;
+			case TOK_BFUN : printf("bfunc\n"); break;
+
+			case TOK_NAME : printf("Name: %s\n", yytext); break;
+			case TOK_STR  : printf("String: %s\n", yytext); break;
+			case TOK_INT  : printf("Integer: %d\n", cint); break;
+			case TOK_SIZE : printf("Size: "); switch (csize)
+			{
+				case byte : printf("byte\n"); break;
+				case word : printf("word\n"); break;
+				case dword : printf("dword\n"); break;
+				case qword : printf("qword\n"); break;
+			} break;
+		}
+	}
+}
+
+int main(int argc, char *argv[])
+{
+	if (argc != 2) { puts("Usage: parser <in_file>"); return(1); }
+	if (! (yyin = fopen(argv[1], "r")))
+	{
+		printf("Cannot open file \"%s\"\n", argv[1]);
+		return(-2);
+	}
+	
+	strcpy(filename, argv[1]);
+	line = 1;
+
+	return(parser());
 }
