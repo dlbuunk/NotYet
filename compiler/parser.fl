@@ -1,0 +1,76 @@
+%{
+#define TOK_DECL 300
+#define TOK_DEF  301
+#define TOK_AFUN 302
+#define TOK_BFUN 303
+#define TOK_P_O  304
+#define TOK_P_C  305
+#define TOK_PQ_O 306
+#define TOK_PQ_C 307
+#define TOK_PN_O 308
+#define TOK_PN_C 309
+#define TOK_NAME 310
+#define TOK_STR  311
+#define TOK_INT  312
+%}
+
+%x comment_c
+%x comment_cc
+%x comment_h
+
+%%
+
+decl	return TOK_DECL;
+def	return TOK_DEF;
+afunc	return TOK_AFUN;
+bfunc	return TOK_BFUN;
+
+"?!("	return TOK_PN_O;
+"?!)"	return TOK_PN_C;
+"?("	return TOK_PQ_O;
+"?)"	return TOK_PQ_C;
+"("	return TOK_P_O;
+")"	return TOK_P_C;
+
+\"(\\.|[^"])*\"		return TOK_STR;
+-?[1-9][0-9]*		return TOK_INT;
+0			return TOK_INT;
+-?0[0-8]+		return TOK_INT;
+-?0x[0-9A-Fa-f]+	return TOK_INT;
+[A-Za-z][A-Za-z_0-9]*	return TOK_NAME;
+
+"{"	return '{';
+"}"	return '}';
+"["	return '[';
+"]"	return ']';
+";"	return ';';
+","	return ',';
+
+"/*"	BEGIN(comment_c);
+"//"	BEGIN(comment_cc);
+"#"	BEGIN(comment_h);
+
+[ \t\r\n]*	;
+
+<comment_c>.	;
+<comment_c>\n	;
+<comment_c>"*/"	; BEGIN(INITIAL);
+
+<comment_cc>.	;
+<comment_cc>\n	BEGIN(INITIAL);
+
+<comment_h>.	;
+<comment_h>\n	BEGIN(INITIAL);
+
+%%
+
+int yywrap()
+{
+	return(1);
+}
+
+int main()
+{
+	while(yylex());
+	return(0);
+}
