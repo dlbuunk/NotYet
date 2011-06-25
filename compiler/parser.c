@@ -446,36 +446,6 @@ int parser(void)
 			default :
 				cerror("invalid type for definition");
 		} break;
-
-		case '[' : printf("[\n"); break;
-		case ']' : printf("]\n"); break;
-		case '{' : printf("{\n"); break;
-		case '}' : printf("}\n"); break;
-		case ';' : printf(";\n"); break;
-		case ',' : printf(",\n"); break;
-
-		case TOK_P_O  : printf("(\n"); break;
-		case TOK_P_C  : printf(")\n"); break;
-		case TOK_PQ_O : printf("?(\n"); break;
-		case TOK_PQ_C : printf("?)\n"); break;
-		case TOK_PN_O : printf("?!(\n"); break;
-		case TOK_PN_C : printf("?!)\n"); break;
-
-		/* TOK_DECL */
-		/* TOK_DEF */
-		case TOK_AFUN : printf("afunc\n"); break;
-		case TOK_BFUN : printf("bfunc\n"); break;
-
-		case TOK_NAME : printf("Name: %s\n", yytext); break;
-		case TOK_STR  : printf("String: %s\n", yytext); break;
-		case TOK_INT  : printf("Integer: %d\n", cint); break;
-		case TOK_SIZE : printf("Size: "); switch (csize)
-		{
-			case byte : printf("byte\n"); break;
-			case word : printf("word\n"); break;
-			case dword : printf("dword\n"); break;
-			case qword : printf("qword\n"); break;
-		} break;
 	}
 }
 
