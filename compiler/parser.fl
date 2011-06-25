@@ -1,11 +1,13 @@
+/************ scanner, using flex ***************/
+
 %{
 
 typedef enum
 {
-	byte = 8,
-	word = 16,
-	dword = 32,
-	qword = 64
+	byte,
+	word,
+	dword,
+	qword
 } size;
 
 #define TOK_DECL 300
@@ -98,15 +100,63 @@ int yywrap()
 	return(1);
 }
 
+/********* data tables *************/
+
+struct
+{
+	unsigned u : 1; /* used */
+	unsigned f : 1; /* 1 if bfunc, 0 if afunc */
+	unsigned d : 1; /* 1 if defined (does b point to something sane?) */
+
+	unsigned int * b; /* block, high level syntax tree */
+	unsigned int * c; /* "compiled" code, ready to be emitted */
+	char name[20];
+} func[0x100];
+
+struct
+{
+	unsigned u : 1; /* used */
+	unsigned s : 2; /* 0 for byte, 1 for word, 2 for dword */
+	unsigned d : 1; /* 1 if defined */
+	unsigned i : 1; /* 1 if initialised */
+	unsigned p : 1; /* 1 if it is a pointer */
+
+	unsigned int data;
+} var[0x100];
+
+/* block storage */
+unsigned int * block;
+
+/* block buildup */
+struct
+{
+	unsigned int st; /* status */
+	unsigned int si; /* size of struct in dwords */
+	struct
+	{
+		unsigned int st;
+		union
+		{
+			void * p;
+			int i;
+			float f;
+		} d;
+	} d[0x100];
+} b[8];
+
+int bnum;
+
+/******* parser *********/
+
 int parser(void)
 {
 	for (;;)
 	{
-		ctok = yylex();
-		printf("%s:%d\t\t", filename, line);
-		switch (ctok)
+		switch (ctok=yylex())
 		{
 			case 0 : return(0);
+
+			
 
 			case '[' : printf("[\n"); break;
 			case ']' : printf("]\n"); break;
