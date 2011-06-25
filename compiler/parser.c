@@ -149,6 +149,14 @@ void * do_block(int n)
 				}
 				break;
 
+			case TOK_STR :
+				ALLOC((strlen(yytext)>>2)+1)
+				strcpy((char *)b, yytext);
+				tb[0].d[i].st = 7;
+				tb[0].d[i].d.p = b;
+				tb[0].si += 2;
+				break;
+
 			case TOK_P_O :
 			case TOK_PQ_O :
 			case TOK_PN_O :
@@ -156,8 +164,6 @@ void * do_block(int n)
 				tb[n].d[i].d.p = do_block(n+1);
 				tb[n].si += 2;
 				break;
-
-
 
 			default :
 				cerror("invalid statement in function body");
@@ -193,6 +199,7 @@ void * do_block(int n)
 void do_func(int f)
 {
 	int i = 0;
+	int j;
 	int curf;
 	int curv;
 	tb[0].st = 3;
@@ -225,6 +232,14 @@ void do_func(int f)
 				}
 				break;
 
+			case TOK_STR :
+				ALLOC((strlen(yytext)>>2)+1)
+				strcpy((char *)b, yytext);
+				tb[0].d[i].st = 7;
+				tb[0].d[i].d.p = b;
+				tb[0].si += 2;
+				break;
+
 			case TOK_P_O :
 			case TOK_PQ_O :
 			case TOK_PN_O :
@@ -241,7 +256,18 @@ void do_func(int f)
 		else if (ctok == '}')
 		{
 			if (yylex() == ';')
+			{
+				ALLOC(tb[0].si);
+				*b = tb[0].st;
+				*(b+1) = tb[0].si;
+				for (i=0,j=3;j<tb[0].si;i++)
+				{
+					*(b+j++) = tb[0].d[i].st;
+					*(b+j++) = tb[0].d[i].d.i;
+				}
+				func[f].b = b;
 				return;
+			}
 			else
 				cerror("junk at end of function");
 		}
@@ -250,7 +276,7 @@ void do_func(int f)
 	}
 }
 
-int parser(void)
+void parser(void)
 {
 	int i;
 
@@ -261,7 +287,7 @@ int parser(void)
 
 	for (;;) switch (ctok=yylex())
 	{
-		case 0 : return(0);
+		case 0 : return;
 
 		case TOK_DECL : switch(ctok=yylex())
 		{
@@ -566,5 +592,8 @@ int main(int argc, char *argv[])
 	block = begin_b;
 	end_b = begin_b + 0x400;
 
-	return(parser());
+	parser();
+
+	free(begin_b);
+	return(0);
 }
