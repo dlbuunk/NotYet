@@ -104,6 +104,24 @@ int find_func(char *str)
 	return(0);
 }
 
+void do_func(int f)
+{
+	bnum = 0;
+	int i;
+	tb[0].st = 3;
+	tb[0].si = 3;
+	for (i=0;;i++) switch (ctok = yylex())
+	{
+		case TOK_INT :
+			tb[0].d[i].st = 1;
+			tb[0].d[i].d.i = cint;
+			break;
+
+		default :
+			cerror("invalid statement in function body");
+	}
+}
+
 int parser(void)
 {
 	int i;
@@ -373,6 +391,8 @@ int parser(void)
 					if (func[curf].f != 1) cerror("bfunc already defined as afunc");
 					if (func[curf].d == 1) cerror("bfunc defined twice");
 					func[curf].d = 1;
+					if (yylex() != '{')
+						cerror("bad function definition");
 					do_func(curf);
 				}
 				else
@@ -381,6 +401,8 @@ int parser(void)
 					func[fnum].f = 1;
 					func[fnum].d = 1;
 					strncpy(func[fnum].name, yytext, NAME_LEN);
+					if (yylex() != '{')
+						cerror("bad function definition");
 					do_func(fnum);
 					fnum++;
 				}
