@@ -19,7 +19,7 @@ void cerror(char * str)
 #define NUM_V 0x100
 #define NAME_LEN 20
 
-struct
+struct /* function */
 {
 	unsigned u : 1; /* used */
 	unsigned f : 1; /* 1 if bfunc, 0 if afunc */
@@ -31,7 +31,7 @@ struct
 } func[NUM_V];
 int fnum;
 
-struct
+struct /* variable */
 {
 	unsigned u : 1; /* used */
 	unsigned s : 2; /* 0 for byte, 1 for word, 2 for dword */
@@ -53,10 +53,11 @@ int vnum;
 unsigned int * block;
 
 /* block buildup */
-struct
+struct /* block */
 {
 	unsigned int st; /* status */
 	unsigned int si; /* size of struct in dwords */
+	void * comp; /* compiled representation */
 	struct
 	{
 		unsigned int st;
@@ -121,7 +122,7 @@ int parser(void)
 						cerror("array declaration followed by invalid name");
 					if (curv = find_var(yytext)) /* variable already declared? */
 					{
-						if (var[curv].u != 1) cerror("internal compiler error");
+						if (var[curv].u != 1) 
 						if (var[curv].s != csize) cerror("inconsistent type for variable");
 						if (var[curv].p != 1) cerror("array already declared as scalar");
 						if (cint)
@@ -167,11 +168,45 @@ int parser(void)
 				break;
 
 			case TOK_AFUN :
-				if ((ctok = yylex()) != NAME)
+				if ((ctok = yylex()) != TOK_NAME)
 					cerror("invalid name for an afunc");
-				
+				if (curf = find_func(yytext)) /* function already declared? */
+				{
+					if (func[curf].u != 1) cerror("internal compiler error");
+					if (func[curf].f != 0) cerror("afunc already declared as bfunc");
+				}
+				else
+				{
+					func[fnum].u = 1;
+					func[fnum].f = 0;
+					func[fnum].d = 0;
+					strncpy(func[fnum].name, yytext, NAME_LEN);
+				}
+				if (yylex() != ';') cerror("missing semicolon");
+				fnum++;
+				break;
 
+			case TOK_BFUN :
+				if ((ctok = yylex()) != TOK_NAME)
+					cerror("invalid name for an bfunc");
+				if (curf = find_func(yytext)) /* function already declared? */
+				{
+					if (func[curf].u != 1) cerror("internal compiler error");
+					if (func[curf].u != 1) cerror("bfunc already defined as afunc");
+				}
+				else
+				{
+					func[fnum].u = 1;
+					func[fnum].f = 1;
+					func[fnum].d = 0;
+					strncpy(func[fnum].name, yytext, NAME_LEN);
+				}
+				if (yylex() != ';') cerror("missing semicolon");
+				fnum++;
+				break;
 		} break;
+
+		
 
 		case '[' : printf("[\n"); break;
 		case ']' : printf("]\n"); break;
