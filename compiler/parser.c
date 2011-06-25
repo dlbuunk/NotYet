@@ -90,7 +90,7 @@ int find_var(char *str)
 {
 	int i;
 	for (i=1; i<NUM_V; i++)
-		if (! strncmp(str, var[i].name, NAME_LEN))
+		if ((! strncmp(str, var[i].name, NAME_LEN)) && var[i].u == 1)
 			return(i);
 	return(0);
 }
@@ -99,7 +99,7 @@ int find_func(char *str)
 {
 	int i;
 	for (i=1; i<NUM_F; i++)
-		if (! strncmp(str, func[i].name, NAME_LEN))
+		if ((! strncmp(str, func[i].name, NAME_LEN)) && var[i].u == 1)
 			return(i);
 	return(0);
 }
@@ -107,18 +107,53 @@ int find_func(char *str)
 void do_func(int f)
 {
 	bnum = 0;
-	int i;
+	int i = 0;
+	int curf;
+	int curv;
 	tb[0].st = 3;
 	tb[0].si = 3;
-	for (i=0;;i++) switch (ctok = yylex())
+	for (;;)
 	{
-		case TOK_INT :
-			tb[0].d[i].st = 1;
-			tb[0].d[i].d.i = cint;
-			break;
+		switch (ctok = yylex())
+		{
+			case TOK_INT :
+				tb[0].d[i].st = 1;
+				tb[0].d[i].d.i = cint;
+				tb[0].si += 2;
+				break;
+	
+			case TOK_NAME :
+				if (curv = find_var(yytext))
+				{
+					if (var[curv].p == 0)
+						tb[0].d[i].st = 4;
+					else
+						tb[0].d[i].st = 6;
+					tb[0].d[i].d.i =curv;
+					tb[0].si += 2;
+				}
+				else if (curf = find_func(yytext))
+				{
+					tb[0].d[i].st = 2;
+					tb[0].d[i].d.i = curf;
+					tb[0].si += 2;
+				}
+				break;
+	
+			default :
+				cerror("invalid statement in function body");
+		}
 
-		default :
-			cerror("invalid statement in function body");
+		if ((ctok = yylex()) == ',') i++;
+		else if (ctok == '}')
+		{
+			if (yylex() == ';')
+				return;
+			else
+				cerror("junk at end of function");
+		}
+		else
+			cerror("missing comma");
 	}
 }
 
