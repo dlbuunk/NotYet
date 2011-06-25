@@ -205,11 +205,11 @@ int parser(void)
 
 			case TOK_BFUN :
 				if ((ctok = yylex()) != TOK_NAME)
-					cerror("invalid name for an bfunc");
+					cerror("invalid name for a bfunc");
 				if (curf = find_func(yytext)) /* function already declared? */
 				{
 					if (func[curf].u != 1) cerror("internal compiler error");
-					if (func[curf].u != 1) cerror("bfunc already defined as afunc");
+					if (func[curf].f != 1) cerror("bfunc already defined as afunc");
 				}
 				else
 				{
@@ -365,6 +365,25 @@ int parser(void)
 				break;
 
 			case TOK_BFUN :
+				if ((ctok = yylex()) != TOK_NAME)
+					cerror("invalid name for a bfunc");
+				if (curf = find_func(yytext)) /* function already declared? */
+				{
+					if (func[curf].u != 1) cerror("internal compiler error");
+					if (func[curf].f != 1) cerror("bfunc already defined as afunc");
+					if (func[curf].d == 1) cerror("bfunc defined twice");
+					func[curf].d = 1;
+					do_func(curf);
+				}
+				else
+				{
+					func[fnum].u = 1;
+					func[fnum].f = 1;
+					func[fnum].d = 1;
+					strncpy(func[fnum].name, yytext, NAME_LEN);
+					do_func(fnum);
+					fnum++;
+				}
 				break;
 
 			default :
