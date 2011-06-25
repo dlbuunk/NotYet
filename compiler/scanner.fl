@@ -1,0 +1,71 @@
+/************ scanner, using flex ***************/
+
+%{
+#include "parser.h"
+%}
+
+%x comment_c
+%x comment_cc
+%x h_mode
+%x h_mode_end
+
+%%
+
+decl			return TOK_DECL;
+def			return TOK_DEF;
+afunc			return TOK_AFUN;
+bfunc			return TOK_BFUN;
+byte			csize = byte; return TOK_SIZE;
+word			csize = word; return TOK_SIZE;
+dword			csize = dword; return TOK_SIZE;
+qword			csize = qword; return TOK_SIZE;
+
+"?!("			return TOK_PN_O;
+"?!)"			return TOK_PN_C;
+"?("			return TOK_PQ_O;
+"?)"			return TOK_PQ_C;
+"("			return TOK_P_O;
+")"			return TOK_P_C;
+
+\"(\\.|[^"])*\"		return TOK_STR;
+-?[1-9][0-9]*		sscanf(yytext, "%d", &cint); return TOK_INT;
+0			cint = 0; return TOK_INT;
+0[0-8]+			sscanf(yytext, "%o", &cint); return TOK_INT;
+0x[0-9A-Fa-f]+		sscanf(yytext, "%x", &cint); return TOK_INT;
+[A-Za-z][A-Za-z_0-9]*	return TOK_NAME;
+
+"{"			return '{';
+"}"			return '}';
+"["			return '[';
+"]"			return ']';
+";"			return ';';
+","			return ',';
+
+"/*"			BEGIN(comment_c);
+"//"			BEGIN(comment_cc);
+"#"			BEGIN(h_mode);
+
+[ \t\r]*		;
+\n			line++;
+
+<comment_c>.		;
+<comment_c>\n		line++;
+<comment_c>"*/"		; BEGIN(INITIAL);
+
+<comment_cc>.		;
+<comment_cc>\n		line++; BEGIN(INITIAL);
+
+<h_mode>[0-9]*		sscanf(yytext, "%d", &line);
+<h_mode>[A-Za-z_\.]*	strcpy(filename, yytext); BEGIN(h_mode_end);
+<h_mode>.		;
+<h_mode>\n		;
+
+<h_mode_end>.		;
+<h_mode_end>\n		BEGIN(INITIAL);
+
+%%
+
+int yywrap()
+{
+	return(1);
+}
