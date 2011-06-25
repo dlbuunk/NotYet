@@ -108,21 +108,29 @@ int parser(void)
 			case TOK_SIZE :
 				if ((ctok = yylex()) == '[')
 				{
+					if ((ctok = yylex()) == ']')
+						cint = 0;
+					else if (ctok == TOK_INT)
+					{
+						if ((ctok = yylex()) != ']')
+							cerror("invalid array size");
+					}
+					else
+						cerror("invalid array size");
+					if ((ctok = yylex()) != TOK_NAME)
+						cerror("array declaration followed by invalid name");
 					if (curv = find_var(yytext)) /* variable already declared? */
 					{
 						if (var[curv].u != 1) cerror("internal compiler error");
 						if (var[curv].s != csize) cerror("inconsistent type for variable");
 						if (var[curv].p != 1) cerror("array already declared as scalar");
-						if ((ctok = yylex()) == TOK_INT)
+						if (cint)
 						{
 							if (var[curv].num == 0)
 								var[curv].num = cint;
 							else if (var[curv].num != cint)
 								cerror("inconsistent array size");
-							ctok = yylex();
 						}
-						if (ctok != ']')
-							cerror("invalid array size");
 					}
 					else
 					{
@@ -132,13 +140,7 @@ int parser(void)
 						var[vnum].i = 0;
 						var[vnum].p = 1;
 						strncpy(var[vnum].name, yytext, NAME_LEN);
-						if ((ctok = yylex()) == TOK_INT)
-						{
-							var[vnum].num = cint;
-							ctok = yylex();
-						}
-						if (ctok != ']')
-							cerror("invalid array size");
+						var[vnum].num = cint;
 					}
 				}
 				else if (ctok == TOK_NAME)
@@ -163,6 +165,12 @@ int parser(void)
 				if (yylex() != ';') cerror("missing semicolon");
 				vnum++;
 				break;
+
+			case TOK_AFUN :
+				if ((ctok = yylex()) != NAME)
+					cerror("invalid name for an afunc");
+				
+
 		} break;
 
 		case '[' : printf("[\n"); break;
