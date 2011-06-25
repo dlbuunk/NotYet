@@ -21,7 +21,7 @@ Returns:
 		PUTCHAR, // consumes one char
 		INC,	// INCreases the pointer
 		DUP,
-		READ,
+		READ
 	?) ,	// end of loop
 	DROP,	// DROPs off 0 char
 	DROP	// DROPs off remaining pointer

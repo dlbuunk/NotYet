@@ -123,10 +123,52 @@ void * do_block(int n)
 	tb[n].si = 3;
 	for (;;)
 	{
-
-		if ((ctok = yylex()) == ',') i++;
-		else switch (ctok)
+		switch (ctok = yylex())
 		{
+			case TOK_INT :
+				tb[n].d[i].st = 1;
+				tb[n].d[i].d.i = cint;
+				tb[n].si += 2;
+				break;
+	
+			case TOK_NAME :
+				if (curv = find_var(yytext))
+				{
+					if (var[curv].p == 0)
+						tb[n].d[i].st = 4;
+					else
+						tb[n].d[i].st = 6;
+					tb[n].d[i].d.i =curv;
+					tb[n].si += 2;
+				}
+				else if (curf = find_func(yytext))
+				{
+					tb[n].d[i].st = 2;
+					tb[n].d[i].d.i = curf;
+					tb[n].si += 2;
+				}
+				break;
+
+			case TOK_P_O :
+			case TOK_PQ_O :
+			case TOK_PN_O :
+				tb[n].d[i].st = 8;
+				tb[n].d[i].d.p = do_block(n+1);
+				tb[n].si += 2;
+				break;
+
+
+
+			default :
+				cerror("invalid statement in function body");
+		}
+
+		switch (yylex())
+		{
+			case ',' :
+				i++;
+				break;
+
 			case TOK_PN_C :
 				tb[n].st |= 0x80;
 			case TOK_PQ_C :
@@ -141,6 +183,7 @@ void * do_block(int n)
 					*(b+j++) = tb[n].d[i].d.i;
 				}
 				return(b);
+
 			default :
 				cerror("missing comma");
 		}
