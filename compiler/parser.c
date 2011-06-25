@@ -42,7 +42,8 @@ struct /* variable */
 	union
 	{
 		void * p;
-		unsigned int d;
+		unsigned int i;
+		float f;
 	} data;
 	int num; /* size of array */
 	char name[NAME_LEN];
@@ -122,7 +123,7 @@ int parser(void)
 						cerror("array declaration followed by invalid name");
 					if (curv = find_var(yytext)) /* variable already declared? */
 					{
-						if (var[curv].u != 1) 
+						if (var[curv].u != 1) cerror("internal compiler error");
 						if (var[curv].s != csize) cerror("inconsistent type for variable");
 						if (var[curv].p != 1) cerror("array already declared as scalar");
 						if (cint)
@@ -142,6 +143,7 @@ int parser(void)
 						var[vnum].p = 1;
 						strncpy(var[vnum].name, yytext, NAME_LEN);
 						var[vnum].num = cint;
+						vnum++;
 					}
 				}
 				else if (ctok == TOK_NAME)
@@ -160,11 +162,12 @@ int parser(void)
 						var[vnum].i = 0;
 						var[vnum].p = 0;
 						strncpy(var[vnum].name, yytext, NAME_LEN);
+						vnum++;
 					}
 				}
-				else cerror("variable declaration followed by invalid name");
+				else
+					cerror("variable declaration followed by invalid name");
 				if (yylex() != ';') cerror("missing semicolon");
-				vnum++;
 				break;
 
 			case TOK_AFUN :
@@ -181,9 +184,10 @@ int parser(void)
 					func[fnum].f = 0;
 					func[fnum].d = 0;
 					strncpy(func[fnum].name, yytext, NAME_LEN);
+					fnum++;
 				}
-				if (yylex() != ';') cerror("missing semicolon");
-				fnum++;
+				if (yylex() != ';')
+					cerror("missing semicolon");
 				break;
 
 			case TOK_BFUN :
@@ -200,13 +204,75 @@ int parser(void)
 					func[fnum].f = 1;
 					func[fnum].d = 0;
 					strncpy(func[fnum].name, yytext, NAME_LEN);
+					fnum++;
 				}
-				if (yylex() != ';') cerror("missing semicolon");
-				fnum++;
+				if (yylex() != ';')
+					cerror("missing semicolon");
 				break;
+
+			default :
+				cerror("invalid type for declaration");
 		} break;
 
-		
+		case TOK_DEF : switch (ctok = yylex())
+		{
+			case TOK_SIZE :
+				if ((ctok = yylex()) == TOK_NAME)
+				{
+					if (curv = find_var(yytext)) /* variable already declared */
+					{
+						if (var[curv].u != 1) cerror("internal compiler error");
+						if (var[curv].s != csize) cerror("invalid type for variable");
+						if (var[curv].d == 1) cerror("variable is defined twice");
+						if (var[curv].p == 1) cerror("scalar already declared as an array");
+						var[curv].d = 1;
+						if ((ctok = yylex()) == TOK_INT)
+						{
+							var[curv].i = 1;
+							var[curv].data.i = cint;
+							if (yylex() != ';')
+								cerror("missing semicolon");
+						}
+						else if (ctok == ';')
+							var[curv].i = 0;
+						else
+							cerror("missing semicolon");
+					}
+					else
+					{
+						var[vnum].u = 1;
+						var[vnum].s = csize;
+						var[vnum].d = 1;
+						var[vnum].p = 0;
+						strncpy(var[vnum].name, yytext, NAME_LEN);
+						if ((ctok = yylex()) == TOK_INT)
+						{
+							var[vnum].i = 1;
+							var[vnum].data.i = cint;
+							if (yylex() != ';')
+								cerror("missing semicolon");
+						}
+						else if (ctok == ';')
+							var[vnum].i = 0;
+						else
+							cerror("missing semicolon");
+						vnum++;
+					}
+				}
+				else if (ctok == '[')
+				{
+					/* handle the array case */
+				}
+				else
+					cerror("variable definition followed by invalid name");
+				break;
+
+			case TOK_BFUN :
+				break;
+
+			default :
+				cerror("invalid type for definition");
+		} break;
 
 		case '[' : printf("[\n"); break;
 		case ']' : printf("]\n"); break;
@@ -223,7 +289,7 @@ int parser(void)
 		case TOK_PN_C : printf("?!)\n"); break;
 
 		/* TOK_DECL */
-		case TOK_DEF  : printf("def\n"); break;
+		/* TOK_DEF */
 		case TOK_AFUN : printf("afunc\n"); break;
 		case TOK_BFUN : printf("bfunc\n"); break;
 
