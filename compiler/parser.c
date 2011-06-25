@@ -6,6 +6,18 @@
 extern char * yytext;
 extern FILE * yyin;
 
+/********* memory macros ***********/ 
+unsigned int * begin_b, end_b, block, b;
+
+#define ALLOC(N) do { \
+	b = block; \
+	if ((block+=((N)<<2)) > end_b) \
+		if (! realloc(begin_b, (end_b+=0x1000)-begin_b)) { \
+			puts("memory allocation failiure"); \
+			exit(-1); \
+		} \
+	while (0);
+
 /********* error function **********/
 void cerror(char * str)
 {
@@ -50,10 +62,6 @@ struct /* variable */
 } var[NUM_V];
 int vnum;
 
-/* block storage */
-unsigned int * block;
-
-/* block buildup */
 struct /* block */
 {
 	unsigned int st; /* status */
