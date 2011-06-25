@@ -82,8 +82,6 @@ struct /* block */
 	} d[0x100];
 } tb[8];
 
-int bnum;
-
 /******* parser *********/
 
 int find_var(char *str)
@@ -104,9 +102,53 @@ int find_func(char *str)
 	return(0);
 }
 
+void * do_block(int n)
+{
+	int i = 0;
+	int j;
+	int curv;
+	int curf;
+	switch (ctok)
+	{
+		case TOK_P_O :
+			tb[n].st = 1;
+			break;
+		case TOK_PQ_O :
+			tb[n].st = 0x11;
+			break;
+		case TOK_PN_O :
+			tb[n].st = 0x31;
+			break;
+	}
+	tb[n].si = 3;
+	for (;;)
+	{
+
+		if ((ctok = yylex()) == ',') i++;
+		else switch (ctok)
+		{
+			case TOK_PN_C :
+				tb[n].st |= 0x80;
+			case TOK_PQ_C :
+				tb[n].st |= 0x40;
+			case TOK_P_C :
+				ALLOC(tb[n].si);
+				*b = tb[n].st;
+				*(b+1) = tb[n].si;
+				for (i=0,j=3;j<tb[0].si;i++)
+				{
+					*(b+j++) = tb[n].d[i].st;
+					*(b+j++) = tb[n].d[i].d.i;
+				}
+				return(b);
+			default :
+				cerror("missing comma");
+		}
+	}
+}
+
 void do_func(int f)
 {
-	bnum = 0;
 	int i = 0;
 	int curf;
 	int curv;
@@ -139,7 +181,15 @@ void do_func(int f)
 					tb[0].si += 2;
 				}
 				break;
-	
+
+			case TOK_P_O :
+			case TOK_PQ_O :
+			case TOK_PN_O :
+				tb[0].d[i].st = 8;
+				tb[0].d[i].d.p = do_block(1);
+				tb[0].si += 2;
+				break;
+
 			default :
 				cerror("invalid statement in function body");
 		}
@@ -162,7 +212,6 @@ int parser(void)
 	int i;
 
 	fnum = vnum = 1;
-	bnum = 0;
 
 	int curf;
 	int curv;
@@ -446,6 +495,9 @@ int parser(void)
 			default :
 				cerror("invalid type for definition");
 		} break;
+
+		default :
+			cerror("invalid statement at global level");
 	}
 }
 
