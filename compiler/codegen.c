@@ -14,7 +14,7 @@ extern void cerror(char *);
 
 void comp_block(unsigned int *b)
 {
-	int i;
+	int i, j;
 	unsigned int s = 0;
 
 	/* some error-checking */
@@ -42,14 +42,91 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 2 :
+			if (func[*(b+i)].f)
+			{
+				tc[s++] = 3;
+				tc[s++] = 0x80000000; /* call */
+				tc[s++] = 3;
+				tc[s++] = *(b+i++);
+			}
+			else
+			{
+				tc[s++] = 3;
+				tc[s++] = *(b+i++);
+			}
+			break;
+
+		case 3 :
 			tc[s++] = 3;
-			tc[s++] = 0x80000000; /* call */
+			tc[s++] = 0x80000002; /* push */
 			tc[s++] = 3;
 			tc[s++] = *(b+i++);
 			break;
 
+		case 4 :
+			tc[s++] = 3;
+			tc[s++] = 0x80000002; /* push */
+			tc[s++] = 2;
+			tc[s++] = *(b+i++);
+			tc[s++] = 3;
+			tc[s++] = 0x80000003; /* read */
+			break;
+
+		case 5 :
+		case 6 :
+			tc[s++] = 3;
+			tc[s++] = 0x80000002; /* push */
+			tc[s++] = 2;
+			tc[s++] = *(b+i++);
+
+		case 7 :
+			tc[s++] = 3;
+			tc[s++] = 0x80000002; /* push */
+			tc[s++] = 1;
+			tc[s++] = *(b+i++);
+
+		case 8 :
+			if (*(b+i) & 0x20)
+			{
+				tc[s++] = 3;
+				tc[s++] = 0x80000005; /* cond_no */
+				tc[s++] = 0;
+				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) - 1) >> 1);
+			}
+			else if (*(b+i) & 0x10)
+			{
+				tc[s++] = 3;
+				tc[s++] = 0x80000004; /* cond_o */
+				tc[s++] = 0;
+				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) - 1) >> 1);
+			}
+			for (j=1; j<*((unsigned int *) *(((unsigned int *) *(b+i)) + 2));)
+				tc[s++] = *(((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) + j++);
+			if (*(b+i) & 0x80)
+			{
+				tc[s++] = 3;
+				tc[s++] = 0x80000007; /* cond_nc */
+				tc[s++] = 0;
+				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) - 1) >> 1);
+			}
+			else if (*(b+i) & 0x40)
+			{
+				tc[s++] = 3;
+				tc[s++] = 0x80000006;
+				tc[s++] = 0;
+				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) - 1) >> 1);
+			}
+			i++;
+			break;
+
 		default:
 			cerror("comp_block() invalid block element status");
+	}
+
+	if (*b & 0x02) /* insert return if function */
+	{
+		tc[s++] = 3;
+		tc[s++] = 0x80000001; /* return */
 	}
 
 	/* copy to memory */
