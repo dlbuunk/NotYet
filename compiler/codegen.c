@@ -176,62 +176,10 @@ void emit(char *fn)
 	}
 
 	/* emit ".data" */
-	fprintf(out, "\t.data\n");
+	fprintf(out, "\t.data\n\n");
 
-	int i, j, k;
+	int i, j;
 	int n = 0;
-	/* first, loop through global vars */
-	while (var[++n].u)
-	{
-		if (var[n].d)
-		{
-			fprintf(out, "\t.globl _%s\n", var[n].name);
-			if (var[n].i)
-			{
-				fprintf(out, "_%s:\n", var[n].name);
-				if (var[n].p)
-				{
-					if (var[n].s == byte)
-						for (i=0; i<var[n].num; i++)
-							fprintf(out, "\t.byte\t0x%X\n", (unsigned char) *(((unsigned int *) var[n].data.p) + 3 + i));
-					else if (var[n].s == word)
-						for (i=0; i<var[n].num; i++)
-							fprintf(out, "\t.word\t0x%X\n", (unsigned short int) *(((unsigned int *) var[n].data.p) + 3 + i));
-					else if (var[n].s == dword)
-						for (i=0; i<var[n].num; i++)
-							fprintf(out, "\t.long\t0x%X\n", *(((unsigned int *) var[n].data.p) + 3 + i));
-					else
-						cerror("emit() invalid type/size");
-				}
-				else /* ! var[n].p */
-				{
-					if (var[n].s == byte)
-						fprintf(out, "\t.byte\t0x%X\n", (unsigned char) var[n].data.i);
-					else if (var[n].s == word)
-						fprintf(out, "\t.word\t0x%X\n", (unsigned short int) var[n].data.i);
-					else if (var[n].s == dword)
-						fprintf(out, "\t.long\t0x%X\n", var[n].data.i);
-					else
-						cerror("emit() invalid type/size");
-				}
-			}
-			else /* ! var[n].i */
-			{
-				if (var[n].s == byte)
-					fprintf(out, "\t.lcomm _%s, %d\n", var[n].name, var[n].num);
-				else if (var[n].s == word)
-					fprintf(out, "\t.lcomm _%s, %d\n", var[n].name, var[n].num << 1);
-				else if (var[n].s == dword)
-					fprintf(out, "\t.lcomm _%s, %d\n", var[n].name, var[n].num << 2);
-				else
-					cerror("codegen() invalid type/size");
-			}
-		}
-		else /* ! var[n].d */
-			fprintf(out, "\t.extern _%s\n", var[n].name);
-	}
-
-	n = 0;
 	int strnum = 0;
 	while (func[++n].u)
 	{
@@ -301,23 +249,71 @@ void emit(char *fn)
 			}
 
 			/* now, loop through the strings */
-/*			for (i=0,j=1; i<strnum; i++)
+			for (i=0,j=1; i<strnum; i++)
 			{
 				while (*(func[n].c+j) != 1) j += 2;
-				fprintf(out, "_%s_s_%d:\n\t.byte\t", func[n].name, i);
+				fprintf(out, "_%s_s_%d:\n\t.asciz\t", func[n].name, i);
 				j++;
-				k = 0;
-				do
-				{
-					fprintf(out, "%d", (unsigned char) (*(((char *) *(func[n].c+j)) + k++))); 
-					if (*(((char *) *(func[n].c+j)) + k++))
-						fprintf(out, ",");
-				} while (*(((char *) *(func[n].c+j)) + k++)) ;
+				fprintf(out ,(char *) *(func[n].c+j));
 				j++;
-			}*/
+			}
 		}
 		else /* ! var[n].u */
 			fprintf(out, "\t.extern _%s\n", var[n].name);
+		fprintf(out, "\n\n");
+	}
+
+	n = 0;
+	/* loop through global vars */
+	while (var[++n].u)
+	{
+		if (var[n].d)
+		{
+			fprintf(out, "\t.globl _%s\n", var[n].name);
+			if (var[n].i)
+			{
+				fprintf(out, "_%s:\n", var[n].name);
+				if (var[n].p)
+				{
+					if (var[n].s == byte)
+						for (i=0; i<var[n].num; i++)
+							fprintf(out, "\t.byte\t0x%X\n", (unsigned char) *(((unsigned int *) var[n].data.p) + 3 + i));
+					else if (var[n].s == word)
+						for (i=0; i<var[n].num; i++)
+							fprintf(out, "\t.word\t0x%X\n", (unsigned short int) *(((unsigned int *) var[n].data.p) + 3 + i));
+					else if (var[n].s == dword)
+						for (i=0; i<var[n].num; i++)
+							fprintf(out, "\t.long\t0x%X\n", *(((unsigned int *) var[n].data.p) + 3 + i));
+					else
+						cerror("emit() invalid type/size");
+				}
+				else /* ! var[n].p */
+				{
+					if (var[n].s == byte)
+						fprintf(out, "\t.byte\t0x%X\n", (unsigned char) var[n].data.i);
+					else if (var[n].s == word)
+						fprintf(out, "\t.word\t0x%X\n", (unsigned short int) var[n].data.i);
+					else if (var[n].s == dword)
+						fprintf(out, "\t.long\t0x%X\n", var[n].data.i);
+					else
+						cerror("emit() invalid type/size");
+				}
+			}
+			else /* ! var[n].i */
+			{
+				if (var[n].s == byte)
+					fprintf(out, "\t.lcomm _%s, %d\n", var[n].name, var[n].num);
+				else if (var[n].s == word)
+					fprintf(out, "\t.lcomm _%s, %d\n", var[n].name, var[n].num << 1);
+				else if (var[n].s == dword)
+					fprintf(out, "\t.lcomm _%s, %d\n", var[n].name, var[n].num << 2);
+				else
+					cerror("codegen() invalid type/size");
+			}
+		}
+		else /* ! var[n].d */
+			fprintf(out, "\t.extern _%s\n", var[n].name);
+		fprintf(out, "\n\n");
 	}
 
 	fclose(out);
