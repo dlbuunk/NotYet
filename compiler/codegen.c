@@ -188,58 +188,58 @@ void emit(char *fn)
 			for (i=1; i<=*(func[n].c);) switch (*(func[n].c+i++))
 			{
 				case 0 :
-					fprintf(out, "\t.long\t$0x%X\n", *(func[n].c+i++));
+					fprintf(out, "\t.long\t0x%X\n", *(func[n].c+i++));
 					break;
 	
 				case 1 :
-					fprintf(out, "\t.long\t$_%s_%d\n", func[n].name, strnum++);
+					fprintf(out, "\t.long\t_%s_%d\n", func[n].name, strnum++);
 					i++;
 					break;
 	
 				case 2 :
-					fprintf(out, "\t.long\t$_%s\n", var[*(func[n].c+i++)].name);
+					fprintf(out, "\t.long\t_%s\n", var[*(func[n].c+i++)].name);
 					break;
 	
 				case 3 :
 					if (*(func[n].c+i) >= 0x80000000) switch (*(func[n].c+i))
 					{
 						case 0x80000000 :
-							fprintf(out, "\t.long\t$callb\n");
+							fprintf(out, "\t.long\tcallb\n");
 							break;
 
 						case 0x80000001 :
-							fprintf(out, "\t.long\t$return\n");
+							fprintf(out, "\t.long\treturn\n");
 							break;
 
 						case 0x80000002 :
-							fprintf(out, "\t.long\t$push\n");
+							fprintf(out, "\t.long\tpush\n");
 							break;
 
 						case 0x80000003 :
-							fprintf(out, "\t.long\t$read\n");
+							fprintf(out, "\t.long\tread\n");
 							break;
 
 						case 0x80000004 :
-							fprintf(out, "\t.long\t$cond_o\n");
+							fprintf(out, "\t.long\tcond_o\n");
 							break;
 
 						case 0x80000005 :
-							fprintf(out, "\t.long\t$cond_no\n");
+							fprintf(out, "\t.long\tcond_no\n");
 							break;
 
 						case 0x80000006 :
-							fprintf(out, "\t.long\t$cond_c\n");
+							fprintf(out, "\t.long\tcond_c\n");
 							break;
 
 						case 0x80000007 :
-							fprintf(out, "\t.long\t$cond_nc\n");
+							fprintf(out, "\t.long\tcond_nc\n");
 							break;
 
 						default :
 							cerror("emit() internal afunc missing");
 					}
 					else
-						fprintf(out, "\t.long\t$_%s\n", func[*(func[n].c+i)].name);
+						fprintf(out, "\t.long\t_%s\n", func[*(func[n].c+i)].name);
 					i++;
 					break;
 	
@@ -276,24 +276,24 @@ void emit(char *fn)
 				{
 					if (var[n].s == byte)
 						for (i=0; i<var[n].num; i++)
-							fprintf(out, "\t.byte\t$0x%X\n", (unsigned char) *(((unsigned int *) var[n].data.p) + 3 + i));
+							fprintf(out, "\t.byte\t0x%X\n", (unsigned char) *(((unsigned int *) var[n].data.p) + 3 + i));
 					else if (var[n].s == word)
 						for (i=0; i<var[n].num; i++)
-							fprintf(out, "\t.word\t$0x%X\n", (unsigned short int) *(((unsigned int *) var[n].data.p) + 3 + i));
+							fprintf(out, "\t.word\t0x%X\n", (unsigned short int) *(((unsigned int *) var[n].data.p) + 3 + i));
 					else if (var[n].s == dword)
 						for (i=0; i<var[n].num; i++)
-							fprintf(out, "\t.long\t$0x%X\n", *(((unsigned int *) var[n].data.p) + 3 + i));
+							fprintf(out, "\t.long\t0x%X\n", *(((unsigned int *) var[n].data.p) + 3 + i));
 					else
 						cerror("emit() invalid type/size");
 				}
 				else /* ! var[n].p */
 				{
 					if (var[n].s == byte)
-						fprintf(out, "\t.byte\t$0x%X\n", (unsigned char) var[n].data.i);
+						fprintf(out, "\t.byte\t0x%X\n", (unsigned char) var[n].data.i);
 					else if (var[n].s == word)
-						fprintf(out, "\t.word\t$0x%X\n", (unsigned short int) var[n].data.i);
+						fprintf(out, "\t.word\t0x%X\n", (unsigned short int) var[n].data.i);
 					else if (var[n].s == dword)
-						fprintf(out, "\t.long\t$0x%X\n", var[n].data.i);
+						fprintf(out, "\t.long\t0x%X\n", var[n].data.i);
 					else
 						cerror("emit() invalid type/size");
 				}
