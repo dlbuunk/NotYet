@@ -96,3 +96,5 @@ struct /* block */
 		} d;
 	} d[0x100];
 } tb[8];
+
+unsigned int tc[0x200];

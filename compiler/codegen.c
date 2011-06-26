@@ -15,6 +15,7 @@ extern void cerror(char *);
 void comp_block(unsigned int *b)
 {
 	int i;
+	unsigned int s = 0;
 
 	/* some error-checking */
 	if (! (*b & 0x01))
@@ -29,6 +30,34 @@ void comp_block(unsigned int *b)
 			comp_block((unsigned int *) *(b+i++));
 		else i++;
 	}
+
+	/* compile the block itself */
+	for (i=3; i<*(b+1);) switch (*(b+i++))
+	{
+		case 1 :
+			tc[s++] = 3;
+			tc[s++] = 0x80000002; /* push */
+			tc[s++] = 0;
+			tc[s++] = *(b+i++);
+			break;
+
+		case 2 :
+			tc[s++] = 3;
+			tc[s++] = 0x80000000; /* call */
+			tc[s++] = 3;
+			tc[s++] = *(b+i++);
+			break;
+
+		default:
+			cerror("comp_block() invalid block element status");
+	}
+
+	/* copy to memory */
+	if (! (*(b+2) = (unsigned int) malloc((s+1)<<2)))
+		cerror("comp_block() memory allocation failure");
+	*((unsigned int *) *(b+2)) = s;
+	for (i=0; i<=s; i++)
+		*(((unsigned int *) *(b+2)) + i + 1) = tc[i];
 }
 
 void codegen(void)
@@ -114,6 +143,8 @@ void emit(char *fn)
 		else /* ! var[n].d */
 			fprintf(out, "\t.extern _%s\n", var[n].name);
 	}
+
+	/* loop through functions */
 
 	fclose(out);
 }
