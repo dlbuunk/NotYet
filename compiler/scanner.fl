@@ -1,7 +1,7 @@
 /************ scanner, using flex ***************/
 
 %{
-#include "parser.h"
+#include "compiler.h"
 %}
 
 %x comment_c
