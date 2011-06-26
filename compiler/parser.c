@@ -469,11 +469,11 @@ void parser(void)
 							{
 								if ((ctok = yylex()) == TOK_INT)
 									*(b+i) = cint;
-								else if (ctok == '}')
-									break;
 								else
 									cerror("invalid array initialisation");
-								if (yylex() != ',')
+								if ((ctok = yylex()) == '}')
+									break;
+								else if (ctok != ',')
 									cerror("invalid array initialisation");
 							}
 							if (yylex() != ';')
@@ -504,11 +504,11 @@ void parser(void)
 							{
 								if ((ctok = yylex()) == TOK_INT)
 									*(b+i) = cint;
-								else if (ctok == '}')
-									break;
 								else
 									cerror("invalid array initialisation");
-								if (yylex() != ',')
+								if ((ctok = yylex()) == '}')
+									break;
+								else if (ctok != ',')
 									cerror("invalid array initialisation");
 							}
 							if (yylex() != ';')
