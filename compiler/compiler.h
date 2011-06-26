@@ -58,7 +58,7 @@ struct /* function */
 	unsigned int * b; /* block, high level syntax tree */
 	unsigned int * c; /* "compiled" code, ready to be emitted */
 	char name[NAME_LEN];
-} func[NUM_V];
+} func[NUM_F];
 int fnum;
 
 struct /* variable */
