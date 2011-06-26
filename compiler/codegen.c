@@ -99,14 +99,14 @@ void comp_block(unsigned int *b)
 				tc[s++] = 3;
 				tc[s++] = 0x80000005; /* cond_no */
 				tc[s++] = 0;
-				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) - 1) >> 1);
+				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) + 1) >> 1);
 			}
 			else if (*((unsigned int *) *(b+i)) & 0x10)
 			{
 				tc[s++] = 3;
 				tc[s++] = 0x80000004; /* cond_o */
 				tc[s++] = 0;
-				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) - 1) >> 1);
+				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) + 1) >> 1);
 			}
 			for (j=1; j<=*((unsigned int *) *(((unsigned int *) *(b+i)) + 2));)
 				tc[s++] = *(((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) + j++);
@@ -115,7 +115,7 @@ void comp_block(unsigned int *b)
 				tc[s++] = 3;
 				tc[s++] = 0x80000007; /* cond_nc */
 				tc[s++] = 0;
-				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) - 1) >> 1);
+				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) + 1) >> 1);
 			}
 
 			else if (*((unsigned int *) *(b+i)) & 0x40)
@@ -123,7 +123,7 @@ void comp_block(unsigned int *b)
 				tc[s++] = 3;
 				tc[s++] = 0x80000006;
 				tc[s++] = 0;
-				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) - 1) >> 1);
+				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) + 1) >> 1);
 			}
 			i++;
 			break;
@@ -259,7 +259,7 @@ void emit(char *fn)
 			}
 		}
 		else /* ! var[n].u */
-			fprintf(out, "\t.extern _%s\n", var[n].name);
+			fprintf(out, "\t.extern _%s\n", func[n].name);
 		fprintf(out, "\n\n");
 	}
 
@@ -277,24 +277,24 @@ void emit(char *fn)
 				{
 					if (var[n].s == byte)
 						for (i=0; i<var[n].num; i++)
-							fprintf(out, "\t.byte\t0x%X\n", (unsigned char) *(((unsigned int *) var[n].data.p) + 3 + i));
+							fprintf(out, "\t.byte\t$0x%X\n", (unsigned char) *(((unsigned int *) var[n].data.p) + 3 + i));
 					else if (var[n].s == word)
 						for (i=0; i<var[n].num; i++)
-							fprintf(out, "\t.word\t0x%X\n", (unsigned short int) *(((unsigned int *) var[n].data.p) + 3 + i));
+							fprintf(out, "\t.word\t$0x%X\n", (unsigned short int) *(((unsigned int *) var[n].data.p) + 3 + i));
 					else if (var[n].s == dword)
 						for (i=0; i<var[n].num; i++)
-							fprintf(out, "\t.long\t0x%X\n", *(((unsigned int *) var[n].data.p) + 3 + i));
+							fprintf(out, "\t.long\t$0x%X\n", *(((unsigned int *) var[n].data.p) + 3 + i));
 					else
 						cerror("emit() invalid type/size");
 				}
 				else /* ! var[n].p */
 				{
 					if (var[n].s == byte)
-						fprintf(out, "\t.byte\t0x%X\n", (unsigned char) var[n].data.i);
+						fprintf(out, "\t.byte\t$0x%X\n", (unsigned char) var[n].data.i);
 					else if (var[n].s == word)
-						fprintf(out, "\t.word\t0x%X\n", (unsigned short int) var[n].data.i);
+						fprintf(out, "\t.word\t$0x%X\n", (unsigned short int) var[n].data.i);
 					else if (var[n].s == dword)
-						fprintf(out, "\t.long\t0x%X\n", var[n].data.i);
+						fprintf(out, "\t.long\t$0x%X\n", var[n].data.i);
 					else
 						cerror("emit() invalid type/size");
 				}

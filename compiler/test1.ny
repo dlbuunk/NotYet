@@ -7,4 +7,4 @@ decl afunc DROP;
 
 decl bfunc puts;
 
-def bfunc test { 42, DROP, "Hello, world!\n", puts, ?( 0xD ) } ;
+def bfunc test { 42, DROP, "Hello, world!\n", puts, ?( DUP ) } ;
