@@ -117,7 +117,6 @@ void comp_block(unsigned int *b)
 				tc[s++] = 0;
 				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) + 1) >> 1);
 			}
-
 			else if (*((unsigned int *) *(b+i)) & 0x40)
 			{
 				tc[s++] = 3;
