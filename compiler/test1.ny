@@ -5,4 +5,6 @@ def dword test_d 0x13579ACF;
 decl afunc DUP;
 decl afunc DROP;
 
-def bfunc test { DUP, ( 42, 2, DROP ) , DROP } ;
+decl bfunc puts;
+
+def bfunc test { 42, DROP, "Hello, world!\n", puts } ;
