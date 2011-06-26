@@ -35,6 +35,7 @@ void comp_block(unsigned int *b)
 	for (i=3; i<*(b+1);) switch (*(b+i++))
 	{
 		case 1 :
+			puts("compiled an immediate");
 			tc[s++] = 3;
 			tc[s++] = 0x80000002; /* push */
 			tc[s++] = 0;
@@ -42,6 +43,7 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 2 :
+			puts("compiled a func");
 			if (func[*(b+i)].f)
 			{
 				tc[s++] = 3;
@@ -57,6 +59,7 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 3 :
+			puts("compiled a &func");
 			tc[s++] = 3;
 			tc[s++] = 0x80000002; /* push */
 			tc[s++] = 3;
@@ -64,6 +67,7 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 4 :
+			puts("compiled a global");
 			tc[s++] = 3;
 			tc[s++] = 0x80000002; /* push */
 			tc[s++] = 2;
@@ -73,19 +77,31 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 5 :
-		case 6 :
+			puts("compiled a &global");
 			tc[s++] = 3;
 			tc[s++] = 0x80000002; /* push */
 			tc[s++] = 2;
 			tc[s++] = *(b+i++);
+			break;
+
+		case 6 :
+			puts("compiled a &global[]");
+			tc[s++] = 3;
+			tc[s++] = 0x80000002; /* push */
+			tc[s++] = 2;
+			tc[s++] = *(b+i++);
+			break;
 
 		case 7 :
+			puts("compiled a string");
 			tc[s++] = 3;
 			tc[s++] = 0x80000002; /* push */
 			tc[s++] = 1;
 			tc[s++] = *(b+i++);
+			break;
 
 		case 8 :
+			puts("compiled a block");
 			if (*(b+i) & 0x20)
 			{
 				tc[s++] = 3;
@@ -133,7 +149,7 @@ void comp_block(unsigned int *b)
 	if (! (*(b+2) = (unsigned int) malloc((s+1)<<2)))
 		cerror("comp_block() memory allocation failure");
 	*((unsigned int *) *(b+2)) = s;
-	for (i=0; i<=s; i++)
+	for (i=0; i<s; i++)
 		*(((unsigned int *) *(b+2)) + i + 1) = tc[i];
 }
 

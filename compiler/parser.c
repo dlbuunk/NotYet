@@ -130,12 +130,9 @@ void * do_block(int n)
 				cerror("invalid statement in function body");
 		}
 
-		switch (yylex())
+		if ((ctok = yylex()) == ',') i++;
+		else switch (ctok)
 		{
-			case ',' :
-				i++;
-				break;
-
 			case TOK_PN_C :
 				tb[n].st |= 0x80;
 			case TOK_PQ_C :
@@ -144,7 +141,7 @@ void * do_block(int n)
 				ALLOC(tb[n].si);
 				*b = tb[n].st;
 				*(b+1) = tb[n].si;
-				for (i=0,j=3;j<tb[0].si;i++)
+				for (i=0,j=3;j<tb[n].si;i++)
 				{
 					*(b+j++) = tb[n].d[i].st;
 					*(b+j++) = tb[n].d[i].d.i;
