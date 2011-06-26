@@ -94,40 +94,37 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 8 :
-#if 0
-			if (*(b+i) & 0x20)
+			if (*((unsigned int *) *(b+i)) & 0x20)
 			{
 				tc[s++] = 3;
 				tc[s++] = 0x80000005; /* cond_no */
 				tc[s++] = 0;
 				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) - 1) >> 1);
 			}
-			else if (*(b+i) & 0x10)
+			else if (*((unsigned int *) *(b+i)) & 0x10)
 			{
 				tc[s++] = 3;
 				tc[s++] = 0x80000004; /* cond_o */
 				tc[s++] = 0;
 				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) - 1) >> 1);
 			}
-#endif
-			for (j=1; j<*((unsigned int *) *(((unsigned int *) *(b+i)) + 2));)
+			for (j=1; j<=*((unsigned int *) *(((unsigned int *) *(b+i)) + 2));)
 				tc[s++] = *(((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) + j++);
-#if 0
-			if (*(b+i) & 0x80)
+			if (*((unsigned int *) *(b+i)) & 0x80)
 			{
 				tc[s++] = 3;
 				tc[s++] = 0x80000007; /* cond_nc */
 				tc[s++] = 0;
 				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) - 1) >> 1);
 			}
-			else if (*(b+i) & 0x40)
+
+			else if (*((unsigned int *) *(b+i)) & 0x40)
 			{
 				tc[s++] = 3;
 				tc[s++] = 0x80000006;
 				tc[s++] = 0;
 				tc[s++] = ((*((unsigned int *) *(((unsigned int *) *(b+i)) + 2)) - 1) >> 1);
 			}
-#endif
 			i++;
 			break;
 
@@ -241,54 +238,66 @@ void emit(char *fn)
 		if (func[n].d)
 		{
 			fprintf(out, "\t.global _%s\n_%s:\n", func[n].name, func[n].name);
-			for (i=1; i<=*(func[n].c);)
+			for (i=1; i<=*(func[n].c);) switch (*(func[n].c+i++))
 			{
-				printf("%p\n", *(func[n].c+i));
-				switch (*(func[n].c+i++))
-				{
-					case 0 :
-						fprintf(out, "\t.long\t$0x%X\n", *(func[n].c+i++));
-						break;
+				case 0 :
+					fprintf(out, "\t.long\t$0x%X\n", *(func[n].c+i++));
+					break;
 	
-					case 1 :
-						fprintf(out, "\t.long\t$_%s_%d\n", func[n].name, strnum++);
-						i++;
-						break;
+				case 1 :
+					fprintf(out, "\t.long\t$_%s_%d\n", func[n].name, strnum++);
+					i++;
+					break;
 	
-					case 2 :
-						fprintf(out, "\t.long\t$_%s\n", var[*(func[n].c+i++)].name);
-						break;
+				case 2 :
+					fprintf(out, "\t.long\t$_%s\n", var[*(func[n].c+i++)].name);
+					break;
 	
-					case 3 :
-						if (*(func[n].c+i) >= 0x80000000) switch (*(func[n].c+i))
-						{
-							case 0x80000000 :
-								fprintf(out, "\t.long\t$callb\n");
-								break;
+				case 3 :
+					if (*(func[n].c+i) >= 0x80000000) switch (*(func[n].c+i))
+					{
+						case 0x80000000 :
+							fprintf(out, "\t.long\t$callb\n");
+							break;
 
-							case 0x80000001 :
-								fprintf(out, "\t.long\t$return\n");
-								break;
+						case 0x80000001 :
+							fprintf(out, "\t.long\t$return\n");
+							break;
 
-							case 0x80000002 :
-								fprintf(out, "\t.long\t$push\n");
-								break;
+						case 0x80000002 :
+							fprintf(out, "\t.long\t$push\n");
+							break;
 
-							case 0x80000003 :
-								fprintf(out, "\t.long\t$read\n");
-								break;
+						case 0x80000003 :
+							fprintf(out, "\t.long\t$read\n");
+							break;
 
-							default :
-								cerror("emit() internal afunc missing");
-						}
-						else
-							fprintf(out, "\t.long\t$_%s\n", func[*(func[n].c+i)].name);
-						i++;
-						break;
+						case 0x80000004 :
+							fprintf(out, "\t.long\t$cond_o\n");
+							break;
+
+						case 0x80000005 :
+							fprintf(out, "\t.long\t$cond_no\n");
+							break;
+
+						case 0x80000006 :
+							fprintf(out, "\t.long\t$cond_c\n");
+							break;
+
+						case 0x80000007 :
+							fprintf(out, "\t.long\t$cond_nc\n");
+							break;
+
+						default :
+							cerror("emit() internal afunc missing");
+					}
+					else
+						fprintf(out, "\t.long\t$_%s\n", func[*(func[n].c+i)].name);
+					i++;
+					break;
 	
-					default :
-						cerror("emit() internal error");
-				}
+				default :
+					cerror("emit() internal error");
 			}
 
 			/* now, loop through the strings */
