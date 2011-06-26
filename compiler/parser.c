@@ -88,8 +88,9 @@ int find_var(char *str)
 {
 	int i;
 	for (i=1; i<NUM_V; i++)
-		if ((! strncmp(str, var[i].name, NAME_LEN)) && var[i].u == 1)
-			return(i);
+		if (! strncmp(str, var[i].name, NAME_LEN))
+			if (var[i].u == 1)
+				return(i);
 	return(0);
 }
 
@@ -97,8 +98,9 @@ int find_func(char *str)
 {
 	int i;
 	for (i=1; i<NUM_F; i++)
-		if ((! strncmp(str, func[i].name, NAME_LEN)) && var[i].u == 1)
-			return(i);
+		if (! strncmp(str, func[i].name, NAME_LEN))
+			if (func[i].u == 1)
+				return(i);
 	return(0);
 }
 
@@ -138,7 +140,7 @@ void * do_block(int n)
 						tb[n].d[i].st = 4;
 					else
 						tb[n].d[i].st = 6;
-					tb[n].d[i].d.i =curv;
+					tb[n].d[i].d.i = curv;
 					tb[n].si += 2;
 				}
 				else if (curf = find_func(yytext))
@@ -147,6 +149,8 @@ void * do_block(int n)
 					tb[n].d[i].d.i = curf;
 					tb[n].si += 2;
 				}
+				else
+					cerror("cannot find variable or function");
 				break;
 
 			case TOK_STR :
@@ -155,6 +159,33 @@ void * do_block(int n)
 				tb[0].d[i].st = 7;
 				tb[0].d[i].d.p = b;
 				tb[0].si += 2;
+				break;
+
+			case '&' :
+				if (yylex() == TOK_NAME)
+				{
+					if (curv = find_var(yytext))
+					{
+						if (var[curv].p == 0)
+						{
+							tb[n].d[i].st = 5;
+							tb[n].d[i].d.i = curv;
+							tb[n].si += 2;
+						}
+						else
+							cerror("cannot take adress of array");
+					}
+					else if (curf = find_func(yytext))
+					{
+						tb[n].d[i].st = 3;
+						tb[n].d[i].d.i = curf;
+						tb[n].si += 2;
+					}
+					else
+						cerror("cannot find variable or function");
+				}
+				else
+					cerror("& must be followed by a valid identifier");
 				break;
 
 			case TOK_P_O :
@@ -221,7 +252,7 @@ void do_func(int f)
 						tb[0].d[i].st = 4;
 					else
 						tb[0].d[i].st = 6;
-					tb[0].d[i].d.i =curv;
+					tb[0].d[i].d.i = curv;
 					tb[0].si += 2;
 				}
 				else if (curf = find_func(yytext))
@@ -230,6 +261,8 @@ void do_func(int f)
 					tb[0].d[i].d.i = curf;
 					tb[0].si += 2;
 				}
+				else
+					cerror("cannot find variable or function");
 				break;
 
 			case TOK_STR :
@@ -238,6 +271,33 @@ void do_func(int f)
 				tb[0].d[i].st = 7;
 				tb[0].d[i].d.p = b;
 				tb[0].si += 2;
+				break;
+
+			case '&' :
+				if (yylex() == TOK_NAME)
+				{
+					if (curv = find_var(yytext))
+					{
+						if (var[curv].p == 0)
+						{
+							tb[0].d[i].st = 5;
+							tb[0].d[i].d.i = curv;
+							tb[0].si += 2;
+						}
+						else
+							cerror("cannot take adress of array");
+					}
+					else if (curf = find_func(yytext))
+					{
+						tb[0].d[i].st = 3;
+						tb[0].d[i].d.i = curf;
+						tb[0].si += 2;
+					}
+					else
+						cerror("cannot find variable or function");
+				}
+				else
+					cerror("& must be followed by a valid identifier");
 				break;
 
 			case TOK_P_O :
