@@ -35,7 +35,6 @@ void comp_block(unsigned int *b)
 	for (i=3; i<*(b+1);) switch (*(b+i++))
 	{
 		case 1 :
-			puts("compiled an immediate");
 			tc[s++] = 3;
 			tc[s++] = 0x80000002; /* push */
 			tc[s++] = 0;
@@ -43,7 +42,6 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 2 :
-			puts("compiled a func");
 			if (func[*(b+i)].f)
 			{
 				tc[s++] = 3;
@@ -59,7 +57,6 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 3 :
-			puts("compiled a &func");
 			tc[s++] = 3;
 			tc[s++] = 0x80000002; /* push */
 			tc[s++] = 3;
@@ -67,7 +64,6 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 4 :
-			puts("compiled a global");
 			tc[s++] = 3;
 			tc[s++] = 0x80000002; /* push */
 			tc[s++] = 2;
@@ -77,7 +73,6 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 5 :
-			puts("compiled a &global");
 			tc[s++] = 3;
 			tc[s++] = 0x80000002; /* push */
 			tc[s++] = 2;
@@ -85,7 +80,6 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 6 :
-			puts("compiled a &global[]");
 			tc[s++] = 3;
 			tc[s++] = 0x80000002; /* push */
 			tc[s++] = 2;
@@ -93,7 +87,6 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 7 :
-			puts("compiled a string");
 			tc[s++] = 3;
 			tc[s++] = 0x80000002; /* push */
 			tc[s++] = 1;
@@ -101,7 +94,6 @@ void comp_block(unsigned int *b)
 			break;
 
 		case 8 :
-			puts("compiled a block");
 			if (*(b+i) & 0x20)
 			{
 				tc[s++] = 3;
@@ -166,6 +158,7 @@ void codegen(void)
 		if (! func[n].f)
 			cerror("codegen() attempted to compile afunc");
 		comp_block(func[n].b);
+		func[n].c = ((unsigned int *) (((unsigned int *) *(func[n].b)) + 2));
 	}
 }
 
@@ -184,7 +177,7 @@ void emit(char *fn)
 	/* emit ".data" */
 	fprintf(out, "\t.data\n");
 
-	int i;
+	int i, j, k;
 	int n = 0;
 	/* first, loop through global vars */
 	while (var[++n].u)
@@ -237,7 +230,55 @@ void emit(char *fn)
 			fprintf(out, "\t.extern _%s\n", var[n].name);
 	}
 
-	/* loop through functions */
+	n = 0;
+	int strnum = 0;
+	while (func[++n].u)
+	{
+		if (func[n].d)
+		{
+			fprintf(out, "\t.global _%s\n_%s:\n", func[n].name, func[n].name);
+			for (i=1; i<*(func[n].c);) switch (*(func[n].c+i++))
+			{
+				case 0 :
+					fprintf(out, "\t.long\t0x%X\n", *(func[n].c+i++));
+					break;
+
+				case 1 :
+					fprintf(out, "\t.long\t$_%s_%d\n", func[n].name, strnum++);
+					i++;
+					break;
+
+				case 2 :
+					fprintf(out, "\t.long\t$_%s\n", var[*(func[n].c+i++)].name);
+					break;
+
+				case 3 :
+					fprintf(out, "\t.long\t$_%s\n", func[*(func[n].c+i++)].name);
+					break;
+
+				default :
+					cerror("emit() internal error");
+			}
+
+			/* now, loop through the strings */
+			for (i=0,j=1; i<strnum; i++)
+			{
+				while (*(func[n].c+j) != 1) j += 2;
+				fprintf(out, "_%s_s_%d:\n\t.byte\t", func[n].name, i);
+				j++;
+				k = 0;
+				do
+				{
+					fprintf(out, "%d", (unsigned char) (*(((char *) *(func[n].c+j)) + k++))); 
+					if (*(((char *) *(func[n].c+j)) + k++))
+						fprintf(out, ",");
+				} while (*(((char *) *(func[n].c+j)) + k++)) ;
+				j++;
+			}
+		}
+		else /* ! var[n].u */
+			fprintf(out, "\t.extern _%s\n", var[n].name);
+	}
 
 	fclose(out);
 }
